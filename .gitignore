@@ -1,0 +1,7 @@
+/target
+.env
+*.jsonl.bak
+data/signals.jsonl
+data/drafts.jsonl
+data/published.jsonl
+**/*.rs.bk

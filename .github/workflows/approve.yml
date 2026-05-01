@@ -1,0 +1,41 @@
+name: Process Approvals
+
+on:
+  schedule:
+    - cron: '30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --bin gate --bin dispatch
+
+      - name: Gate
+        run: ./target/release/gate
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR:           data
+
+      - name: Dispatch
+        run: ./target/release/dispatch
+        env:
+          REDDIT_CLIENT_ID:   ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_SECRET:      ${{ secrets.REDDIT_SECRET }}
+          REDDIT_USERNAME:    ${{ secrets.REDDIT_USERNAME }}
+          REDDIT_PASSWORD:    ${{ secrets.REDDIT_PASSWORD }}
+          DEVTO_API_KEY:      ${{ secrets.DEVTO_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATA_DIR:           data
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: gate ${{ github.run_id }}"
+          file_pattern:   "data/*.jsonl"
