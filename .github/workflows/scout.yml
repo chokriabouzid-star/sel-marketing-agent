@@ -52,6 +52,7 @@ jobs:
         run: ./target/release/gate
         env:
           GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          GITHUB_TOKEN:       ${{ secrets.GH_PAT }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           DATA_DIR:           data
