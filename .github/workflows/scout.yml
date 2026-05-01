@@ -33,7 +33,7 @@ jobs:
           REDDIT_SECRET:       ${{ secrets.REDDIT_SECRET }}
           REDDIT_USERNAME:     ${{ secrets.REDDIT_USERNAME }}
           REDDIT_PASSWORD:     ${{ secrets.REDDIT_PASSWORD }}
-          GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN:        ${{ secrets.GH_PAT }}
           GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -72,3 +72,4 @@ jobs:
           file_pattern:   "data/*.jsonl"
           commit_user_name:  "SEL Agent"
           commit_user_email: "agent@noreply.github.com"
+# Updated: $(date)
