@@ -39,36 +39,37 @@ fn is_agent_related(title: &str) -> bool {
 
 fn hn_prompt(s: &Signal) -> String {
     let body = s.body.as_deref()
-        .map(|b| format!("\nContext: {}", &b[..b.len().min(150)]))
+        .map(|b| format!("\nContext: {}", &b[..b.len().min(200)]))
         .unwrap_or_default();
 
     let sel_instruction = if is_agent_related(&s.title) {
-        "You may mention SEL Agent in one sentence if it adds value.
-Use natural phrasing: built SEL Agent for this / SEL Agent solves this by /
-in SEL Agent we found that..."
+        "You may mention SEL Agent in ONE sentence maximum, only if directly relevant.
+Natural phrasing only: 'built SEL Agent for this exact problem' / 
+'in SEL Agent we solved this by [specific thing]'
+Do NOT say 'SEL Agent went the opposite direction'."
     } else {
-        "Do NOT mention SEL Agent. Comment purely as a developer."
+        "Do NOT mention SEL Agent. Comment as a helpful developer."
     };
 
     format!(
-"Thread: {title}{body}
+"HN Thread: {title}{body}
 
 {sel_instruction}
 
 Write a HN comment:
 - 2-3 sentences maximum
-- Start with the actual point, not with I or We
-- No em-dashes, no filler phrases
-- End with one short specific question
-- If the thread is not about software at all, write: SKIP
+- Start with the technical point directly (not 'I' or 'We' or 'Great post')
+- No em-dashes, no buzzwords, no filler
+- End with ONE specific short question relevant to the thread
+- If the thread is completely off-topic for developers, write: SKIP
+- Do NOT mention 'Omar' or any person's name
 
 Comment:",
         title = s.title,
-        body  = body,
+        body = body,
         sel_instruction = sel_instruction,
     )
 }
-
 fn reddit_prompt(s: &Signal) -> String {
     let body = s.body.as_deref()
         .map(|b| format!("\n{}", &b[..b.len().min(200)]))
@@ -95,21 +96,42 @@ Comment:",
 }
 
 fn devto_prompt(s: &Signal) -> String {
+    // استخرج اسم المنافس من العنوان
+    let competitor = if s.title.to_lowercase().contains("swe-agent") {
+        "SWE-agent"
+    } else if s.title.to_lowercase().contains("aider") {
+        "Aider"
+    } else if s.title.to_lowercase().contains("openhands") || 
+              s.title.to_lowercase().contains("opendevin") {
+        "OpenHands"
+    } else {
+        "this tool"
+    };
+
     format!(
-"Competitor release: {title}
+"A new release from {competitor}: {title}
 
-Write 3 sentences:
-1. What they did well (specific, not vague)
-2. One technical difference: SEL Agent trades X for Y by...
-   or: SEL Agent went the opposite direction...
-   or: we prioritized X over Y in SEL Agent...
-3. One honest number: 36/36 bench or 0.2 repairs or 100% mutation score
+Write a 3-sentence Dev.to comment from a developer's perspective:
+1. One specific technical thing they improved (be precise, not vague)
+2. A genuine technical observation — you can mention SEL Agent ONLY if 
+   the comparison is natural and specific. Do NOT use 'went the opposite 
+   direction'. Use varied phrasing like: 'took a different bet', 
+   'prioritized differently', 'we ran into the same problem and chose...'
+3. One concrete data point if relevant (36/36, 0.2 repairs/task, 
+   zero LLM calls post-recording)
 
-No hype. 3 sentences only.",
+Rules:
+- NO marketing tone
+- NO 'went the opposite direction' phrase
+- If the comparison feels forced, skip SEL entirely
+- Max 80 words total
+- Sound like a developer, not a marketer
+
+Comment:",
+        competitor = competitor,
         title = s.title,
     )
 }
-
 fn readme_prompt() -> String {
     "GitHub README Benchmarks section — GFM Markdown only:
 

@@ -47,22 +47,35 @@ impl Forge {
         Ok(draft)
     }
 
-    pub async fn generate_batch(
-        &self,
-        signals: &[Signal],
-        max:     usize,
-    ) -> Vec<Draft> {
-        let mut drafts: Vec<Draft> = Vec::new();
-        for signal in signals.iter().take(max) {
-            match self.generate_draft(signal).await {
-                Ok(d)  => drafts.push(d),
-                Err(e) => tracing::warn!("[Forge] Skip: {}", e),
-            }
-            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-        }
-        drafts
-    }
+pub async fn generate_batch(
+    &self,
+    signals: &[Signal],
+    max:     usize,
+) -> Vec<Draft> {
+    let mut drafts: Vec<Draft> = Vec::new();
+    let mut processed_urls: std::collections::HashSet<String> = 
+        std::collections::HashSet::new();
 
+    for signal in signals.iter() {
+        if drafts.len() >= max { break; }
+
+        // تجاهل نفس الـ URL إذا عولجت مسبقاً في هذا الـ run
+        let url_key = signal.url.clone()
+            .unwrap_or_else(|| signal.id.clone());
+        if processed_urls.contains(&url_key) {
+            tracing::info!("[Forge] Dedup skip: {}", &signal.title[..signal.title.len().min(50)]);
+            continue;
+        }
+        processed_urls.insert(url_key);
+
+        match self.generate_draft(signal).await {
+            Ok(d)  => drafts.push(d),
+            Err(e) => tracing::warn!("[Forge] Skip: {}", e),
+        }
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    }
+    drafts
+}
     fn quality_score(&self, content: &str) -> f32 {
         let mut s: f32 = 0.5;
         if content.chars().any(|c| c.is_ascii_digit()) { s += 0.15; }
